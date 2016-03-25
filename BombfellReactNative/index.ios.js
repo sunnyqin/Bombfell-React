@@ -7,6 +7,7 @@
 var React = require('react-native');
 var SearchPage = require('./src/scenes/SearchPage');
 var ProfilePage = require('./src/scenes/ProfilePage');
+var LoginPage = require('./src/scenes/LoginPage');
 
 class HelloWorld extends React.Component {
   render() {
@@ -15,15 +16,33 @@ class HelloWorld extends React.Component {
 }
 
 class BombfellReactNative extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      isLogin: false
+    };
+  }
+
   render() {
-    return (
-       <React.NavigatorIOS
-        style={styles.container}
-        initialRoute={{
-          title: 'PROFILE',
-          component: ProfilePage,
-        }}/>
-    );
+    if (this.state.isLogin) {
+        return (
+          <React.NavigatorIOS
+            style={styles.container}
+            initialRoute={{
+              title: 'PROFILE',
+              component: ProfilePage,
+            }}/>
+        );
+    } else {
+       return (
+        <React.NavigatorIOS
+          style={styles.container}
+          initialRoute={{
+            title: 'SIGN IN',
+            component: LoginPage,
+          }}/>
+      );
+    }
   }
 }
 
