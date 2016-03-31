@@ -51,99 +51,75 @@ class ProfileHeader extends Component {
 class ProfilePage extends React.Component {
     constructor(props) {
         super(props);
-        this.state = this.getInitialState();
-        this.bindMethods();
-    }
-
-    bindMethods() {
-        if (! this.bindableMethods) {
-            return;
-        }   
-
-        for (var methodName in this.bindableMethods) {
-            this[methodName] = this.bindableMethods[methodName].bind(this);
+        this._renderRow = this._renderRow.bind(this);
+        this.state = {
+          dataSource: new ListView.DataSource({
+              rowHasChanged           : (row1, row2) => row1 !== row2,
+              sectionHeaderHasChanged : (s1, s2) => s1 !== s2
+          }),
         }
     }
 
-    getInitialState() {
-        return {
-            dataSource : new ListView.DataSource({
-                rowHasChanged           : (row1, row2) => row1 !== row2,
-                sectionHeaderHasChanged : (s1, s2) => s1 !== s2
-            })
-        }
-    }
-    
     componentDidMount() {
-        this.fetchData();
+        this._fetchData();
     }
-    
-    fetchData () {
-    	var organizations = ["MEASUREMENTS", "SIZES", "BODY&SKIN", "STYLES", "SHIRT BRANDS", "PANT BRANDS", "NEVER WEAR", "BUDGETS"]
-        this.setState({
-            dataSource : this.state.dataSource.cloneWithRows(organizations),
-        });
+
+    _fetchData () {
+      var array = [{"name": "MEASUREMENTS"}, {"name": "SIZES"}, {"name": "BODY&SKIN"}, {"name": "STYLES"},
+      {"name": "SHIRT BRANDS"}, {"name": "PANT BRANDS"}, {"name": "NEVER WEAR"}, {"name": "BUDGETS"}];
+      this.setState({
+        dataSource: this.state.dataSource.cloneWithRows(array),
+      })
     }
 
     render() {
-        return this.renderListView();
+      return (
+        <View style={{flexDirection: 'column', paddingTop: 64, flex: 1}}>
+        <Image resizeMode="stretch" style={styles.headerImage} source={require('../images/profilebg.png')}>
+          <ProfileHeader/>
+        </Image>
+        <ListView
+          automaticallyAdjustContentInsets={false}
+            dataSource = {this.state.dataSource}
+            style = {styles.listView}
+            renderRow  = {this._renderRow}
+            renderSectionHeader = {this._renderSectionHeader}
+        />
+        </View>
+      );
     }
 
-    renderListView() {
-        return (
-        	<View style={{flexDirection: 'column', alignItems: 'stretch', paddingTop: 64}}>
-        	<Image resizeMode="stretch" style={styles.headerImage} source={require('../images/profilebg.png')}>
-        		<ProfileHeader>
-        		</ProfileHeader>
-        	</Image>
-            <View>
-                <ListView
-                	automaticallyAdjustContentInsets={false}
-                    dataSource = {this.state.dataSource}
-                    style = {styles.listView}
-                    renderRow  = {this.renderRow}
-                    renderSectionHeader = {this.renderSectionHeader}
-                />
-            </View>
-            </View>
-        );
-    }
-
-    renderSectionHeader(sectionData, sectionID) {
+    _renderSectionHeader(sectionData, sectionID) {
         return (
             <View style={styles.section}>
                 <Text style={styles.headerText}>ABOUT YOU</Text>
             </View>
-        ); 
+        );
+    }
+
+    _renderRow(rowData, sectionID, rowID) {
+        return (
+            <TouchableOpacity onPress={() => this._onPressRow(rowData, sectionID)}>
+                <View style={styles.rowStyle}>
+                    <Text style={styles.rowText}>{rowData.name}</Text>
+                </View>
+            </TouchableOpacity>
+        );
+    }
+
+    _onPressRow(rowData, sectionID) {
+        var buttons = [
+            {
+                text : 'Cancel'
+            },
+            {
+                text    : 'OK',
+                onPress : () => this.createCalendarEvent(rowData, sectionID)
+            }
+        ]
+        AlertIOS.alert('Click ' + rowData.name, null, null);
     }
 };
-
-Object.assign(ProfilePage.prototype, {
-    bindableMethods : {
-        renderRow : function (rowData, sectionID, rowID) {
-            return (
-                <TouchableOpacity onPress={() => this.onPressRow(rowData, sectionID)}>
-                    <View style={styles.rowStyle}>
-                        <Text style={styles.rowText}>{rowData}</Text>        
-                    </View>
-                </TouchableOpacity>
-            );
-        },
-        onPressRow : function (rowData, sectionID) {
-            var buttons = [
-                {
-                    text : 'Cancel'
-                },
-                {
-                    text    : 'OK',
-                    onPress : () => this.createCalendarEvent(rowData, sectionID)
-                }
-            ]
-            AlertIOS.alert('Click ' + rowData, null, null);
-        }
-
-    }
-});
 
 var styles = StyleSheet.create({
     container: {
@@ -164,6 +140,7 @@ var styles = StyleSheet.create({
     },
     listView: {
     	backgroundColor: '#FFFFFF',
+      flex: 1,
     },
     text: {
         color: 'white',

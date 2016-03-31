@@ -1,5 +1,6 @@
 'use strict';
 var React = require('react-native');
+var ProgressHUD = require('react-native-progress-hud');
 var {
     AppRegistry,
     StyleSheet,
@@ -21,15 +22,42 @@ var loginAPI = "https://www.bombfell.com/api/login";
 var SuccessLoginPage = require('./ProfilePage');
 
 class LoginPage extends Component {
+  contextTypes: {
+    showProgressHUD: React.PropTypes.func.isRequired,
+    dismissProgressHUD: React.PropTypes.func.isRequired
+  }
 	constructor(props) {
 		super(props);
 		this.state = {
 			username: '',
 			password: '',
+      isHudVisisible: false,
 		}
 	}
 
 	onSignInPressed() {
+    if (this.state.username.length == 0 || this.state.password.length == 0) {
+      AlertIOS.prompt(
+        'Invalid username/password',
+        null,
+        [
+          {text: 'OK'},
+        ],
+        'default',
+      );
+      return;
+    }
+
+    this._showProgressHUD();
+    this.props.navigator.push({
+            title: "PROFILE",
+            component: SuccessLoginPage,
+            wrapperStyle: styles.customWrapperStyle,
+            passProps: {username: this.state.username, password: this.state.password},
+    });
+    this._dismissProgressHUD();
+    return;
+
 		fetch(loginAPI, {
 			method: 'POST',
 			headers: {
@@ -40,25 +68,45 @@ class LoginPage extends Component {
 				'email':  this.state.username,
 				'password': this.state.password,
 			})
-		}).then((response) => response.text()).then((responseText) => {
-			console.log(responseText);
-			this.props.navigator.push({
-            	title: "PROFILE",
-            	component: SuccessLoginPage,
-            	passProps: {username: this.state.username, password: this.state.password},
-        	});
+		}).then((response) => response.json()).then((json) => {
+      this._dismissProgressHUD();
+      if (json["status"] != 0) {
+        this.props.navigator.replace({
+                title: "PROFILE",
+                component: SuccessLoginPage,
+                passProps: {username: this.state.username, password: this.state.password},
+            });
+      } else {
+        AlertIOS.prompt(
+          'Invalid creditical',
+          null,
+          [
+            {text: 'OK'},
+          ],
+          'default',
+        );
+      }
+
 		}).catch((error) => {
 			console.log(error);
 		});
 	}
 
-	onUsernameChanged(event) {
+  _showProgressHUD() {
+    this.setState({isHudVisisible: true});
+  }
+
+  _dismissProgressHUD() {
+    this.setState({isHudVisisible: false});
+  }
+
+	_onUsernameChanged(event) {
 		this.setState({
 			username: event.nativeEvent.text
 		})
 	}
 
-	onPasswordChanged(event) {
+	_onPasswordChanged(event) {
 		this.setState({
 			password: event.nativeEvent.text
 		})
@@ -70,26 +118,32 @@ class LoginPage extends Component {
 				<View style={styles.customTextField}>
 					<View style={{flex: 1, flexDirection: 'row'}}>
 					<Text style={styles.labelText}>Email</Text>
-					<TextInput editable={true} style={styles.textInput} onChange={this.onUsernameChanged.bind(this)}/>
+					<TextInput editable={true} style={styles.textInput} onChange={this._onUsernameChanged.bind(this)}/>
 				</View>
 				<View style={styles.separator}/>
 				</View>
 				<View style={styles.customTextField}>
 					<View style={{flex: 1, flexDirection: 'row'}}>
 					<Text style={styles.labelText}>Password</Text>
-					<TextInput editable={true} style={styles.textInput} onChange={this.onPasswordChanged.bind(this)}/>
+					<TextInput editable={true} secureTextEntry={true} style={styles.textInput} onChange={this._onPasswordChanged.bind(this)}/>
 				</View>
 				<View style={styles.separator}/>
 				</View>
 				<TouchableHighlight style={styles.button} onPress={this.onSignInPressed.bind(this)} underlayColor='#EFFFFF'>
 					<Text style={styles.buttonText}>Sign In</Text>
 				</TouchableHighlight>
+        <ProgressHUD isVisible={this.state.isHudVisisible}
+            isDismissible={true} overlayColor='rgba(0, 0, 0, 0.11)'
+            />
 			</View>
 		);
 	}
 }
 
 var styles = StyleSheet.create( {
+  customWrapperStyle: {
+    backgroundColor: '#bbdddd'
+  },
 	container: {
 		flex: 1,
 		paddingTop: 64,
@@ -124,11 +178,11 @@ var styles = StyleSheet.create( {
 		paddingLeft: 10,
 		paddingVertical: 5,
 		fontWeight: '300',
-  		borderWidth: 0,
-  		borderColor: '#48BBEC',
-  		borderRadius: 8,
-  		color: '#030303',
-  		alignSelf: 'center',
+  	borderWidth: 0,
+  	borderColor: '#48BBEC',
+  	borderRadius: 8,
+  	color: '#030303',
+  	alignSelf: 'center',
 	},
 	separator: {
 		marginLeft: 15,
