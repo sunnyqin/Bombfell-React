@@ -1,6 +1,5 @@
 'use strict';
-var React = require('react-native');
-var {
+import React, {
     AppRegistry,
     StyleSheet,
     Text,
@@ -13,7 +12,8 @@ var {
     Image,
     Dimensions,
     Component,
-} = React;
+    NavigatorIOS,
+} from 'react-native';
 
 var API_URL = 'http://demo9383702.mockable.io/users';
 var {width, height} = Dimensions.get('window');
@@ -48,7 +48,7 @@ class ProfileHeader extends Component {
 	}
 }
 
-class ProfilePage extends React.Component {
+export default class ProfilePage extends React.Component {
     constructor(props) {
         super(props);
         this._renderRow = this._renderRow.bind(this);
@@ -219,5 +219,3 @@ var styles = StyleSheet.create({
         backgroundColor: '#F1F1F1'
     }
 });
-
-module.exports = ProfilePage

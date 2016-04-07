@@ -4,10 +4,12 @@
  */
 
 'use strict';
-var React = require('react-native');
-var SearchPage = require('./src/scenes/SearchPage');
-var ProfilePage = require('./src/scenes/ProfilePage');
-var LoginPage = require('./src/scenes/LoginPage');
+import React from 'react-native';
+import ProfilePage from './src/scenes/ProfilePage';
+import LoginPage from './src/scenes/LoginPage';
+import Realm from 'realm';
+import User from './src/database/user';
+import {AlertIOS} from 'react-native';
 
 class HelloWorld extends React.Component {
   render() {
@@ -18,9 +20,28 @@ class HelloWorld extends React.Component {
 class BombfellReactNative extends React.Component {
   constructor(props) {
     super(props);
+    let realm = new Realm({schema: [User]});
+    let users = realm.objects('User');
     this.state = {
-      isLogin: false
+      isLogin: users.length > 0
     };
+  }
+
+  _logout() {
+    let realm = new Realm({schema: [User]});
+    realm.write( () => {
+      let allusers = realm.objects('User');
+      realm.delete(allusers);
+
+      AlertIOS.prompt(
+        'Logout Success',
+        null,
+        [
+          {text: 'OK'},
+        ],
+        'default',
+      );
+    });
   }
 
   render() {
@@ -31,6 +52,8 @@ class BombfellReactNative extends React.Component {
             initialRoute={{
               title: 'PROFILE',
               component: ProfilePage,
+              rightButtonTitle: 'Logout',
+              onRightButtonPress: this._logout.bind(this),
             }}/>
         );
     } else {

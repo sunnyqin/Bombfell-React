@@ -1,7 +1,7 @@
 'use strict';
-var React = require('react-native');
-var ProgressHUD = require('react-native-progress-hud');
-var {
+import React from 'react-native';
+import ProgressHUD from 'react-native-progress-hud';
+import {
     AppRegistry,
     StyleSheet,
     Text,
@@ -16,15 +16,20 @@ var {
     Component,
     TextInput,
     TouchableHighlight,
-} = React;
+    NavigatorIOS,
+} from 'react-native';
 
 var loginAPI = "https://www.bombfell.com/api/login";
-var SuccessLoginPage = require('./ProfilePage');
+import SuccessLoginPage from './ProfilePage';
+import User from '../database/user';
+import Realm from 'realm';
 
-class LoginPage extends Component {
-  contextTypes: {
-    showProgressHUD: React.PropTypes.func.isRequired,
-    dismissProgressHUD: React.PropTypes.func.isRequired
+export default class LoginPage extends Component {
+  static defaultProps = {
+
+  }
+  propTypes: {
+
   }
 	constructor(props) {
 		super(props);
@@ -35,7 +40,32 @@ class LoginPage extends Component {
 		}
 	}
 
-	onSignInPressed() {
+  get_users() {
+
+  }
+
+  componentDidMount() {
+
+  }
+
+  _logout() {
+    let realm = new Realm({schema: [User]});
+    realm.write( () => {
+      let allusers = realm.objects('User');
+      realm.delete(allusers);
+
+      AlertIOS.prompt(
+        'Logout Success',
+        null,
+        [
+          {text: 'OK'},
+        ],
+        'default',
+      );
+    });
+  }
+
+	_onSignInPressed() {
     if (this.state.username.length == 0 || this.state.password.length == 0) {
       AlertIOS.prompt(
         'Invalid username/password',
@@ -49,15 +79,6 @@ class LoginPage extends Component {
     }
 
     this._showProgressHUD();
-    this.props.navigator.push({
-            title: "PROFILE",
-            component: SuccessLoginPage,
-            wrapperStyle: styles.customWrapperStyle,
-            passProps: {username: this.state.username, password: this.state.password},
-    });
-    this._dismissProgressHUD();
-    return;
-
 		fetch(loginAPI, {
 			method: 'POST',
 			headers: {
@@ -71,11 +92,25 @@ class LoginPage extends Component {
 		}).then((response) => response.json()).then((json) => {
       this._dismissProgressHUD();
       if (json["status"] != 0) {
-        this.props.navigator.replace({
+        this.props.navigator.push({
                 title: "PROFILE",
                 component: SuccessLoginPage,
+                rightButtonTitle: 'Logout',
                 passProps: {username: this.state.username, password: this.state.password},
+                onRightButtonPress: this._logout.bind(this),
             });
+
+        var delay = 2000;
+        setTimeout( () => {
+          let realm = new Realm({schema: [User]});
+          realm.write(() => {
+            let savedUser = realm.create('User', {
+              username: this.state.username,
+              userid: json["user_id"],
+              token: json["token"],
+            });
+          });
+        }, delay);
       } else {
         AlertIOS.prompt(
           'Invalid creditical',
@@ -129,7 +164,7 @@ class LoginPage extends Component {
 				</View>
 				<View style={styles.separator}/>
 				</View>
-				<TouchableHighlight style={styles.button} onPress={this.onSignInPressed.bind(this)} underlayColor='#EFFFFF'>
+				<TouchableHighlight style={styles.button} onPress={this._onSignInPressed.bind(this)} underlayColor='#EFFFFF'>
 					<Text style={styles.buttonText}>Sign In</Text>
 				</TouchableHighlight>
         <ProgressHUD isVisible={this.state.isHudVisisible}
@@ -209,5 +244,3 @@ var styles = StyleSheet.create( {
 		textAlign: 'center',
 	}
 });
-
-module.exports = LoginPage
